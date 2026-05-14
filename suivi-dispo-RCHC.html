@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi Dispo RCHC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap');
+
+  :root {
+    --night: #0F0E0C;
+    --deep: #1A1916;
+    --card: #232220;
+    --surface: #2C2B28;
+    --border: #3A3835;
+    --muted: #6B6860;
+    --text: #E8E4DC;
+    --soft: #A09890;
+    --gold: #D4A847;
+    --gold-dim: #8A6E2E;
+    --bonbons: #E8747A;
+    --cocktails: #5B9BD5;
+    --vip: #9B7FD4;
+    --logistique: #5BAD7A;
+    --nonaffecte: #888;
+    --coral: #E05C3A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--night);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--deep);
+    border-bottom: 1px solid var(--border);
+    padding: 1.4rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .hdr-left h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .hdr-left h1 em { color: var(--gold); font-style: italic; }
+  .hdr-dates {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .hdr-right { display: flex; align-items: center; gap: 1rem; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #5CDE8A;
+    font-family: 'DM Mono', monospace;
+  }
+  .live-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #5CDE8A;
+    animation: blink 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .last-update {
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .btn-refresh {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--soft);
+    border-radius: 6px;
+    padding: 0.45rem 0.9rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .btn-refresh:hover { background: var(--border); color: var(--text); }
+  .btn-refresh.spinning svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn-print {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-print:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--deep);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    padding: 0 2rem;
+    overflow-x: auto;
+    gap: 0;
+  }
+  nav button {
+    background: none; border: none;
+    color: var(--muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.75rem; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.8rem 1.1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  nav button:hover { color: var(--soft); }
+  nav button.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* ── MAIN ── */
+  main { padding: 1.8rem 2rem; max-width: 1200px; margin: 0 auto; }
+
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  /* ── LOADING / ERROR ── */
+  .loader {
+    display: flex; align-items: center; gap: 0.7rem;
+    color: var(--muted); font-size: 0.85rem; padding: 3rem 0;
+    justify-content: center;
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  .error-box {
+    background: #2A1A16;
+    border: 1px solid var(--coral);
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    color: var(--coral);
+    font-size: 0.85rem;
+    margin-bottom: 1.2rem;
+    line-height: 1.6;
+  }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1.6rem;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+  }
+  .stat-n {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem; font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .stat-l {
+    font-size: 0.7rem; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted);
+    margin-top: 0.3rem;
+  }
+
+  /* ── SECTION TITLE ── */
+  .sec-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem; font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+  .sec-sub {
+    font-size: 0.78rem; color: var(--muted);
+    margin-bottom: 1.2rem; letter-spacing: 0.02em;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+  }
+  .leg { display: flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; color: var(--soft); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── TABLE GLOBALE ── */
+  .tbl-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  thead tr { background: var(--surface); }
+  thead th {
+    color: var(--muted);
+    padding: 0.7rem 0.85rem;
+    font-size: 0.68rem; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: left; white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface); }
+  td { padding: 0.55rem 0.85rem; vertical-align: middle; }
+  td.jour-cell {
+    font-size: 0.68rem; font-weight: 500;
+    color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.08em; white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+  }
+  td.time-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem; font-weight: 500;
+    color: var(--soft); white-space: nowrap;
+  }
+  td.total-cell { font-weight: 600; color: var(--text); }
+
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 24px; height: 24px;
+    border-radius: 12px; font-weight: 600;
+    font-size: 0.78rem; padding: 0 5px;
+    font-family: 'DM Mono', monospace;
+  }
+  .b0   { background: var(--surface); color: var(--border); }
+  .bbon { background: rgba(232,116,122,0.18); color: var(--bonbons); }
+  .bcoc { background: rgba(91,155,213,0.18); color: var(--cocktails); }
+  .bvip { background: rgba(155,127,212,0.18); color: var(--vip); }
+  .blog { background: rgba(91,173,122,0.18); color: var(--logistique); }
+  .bna  { background: rgba(136,136,136,0.15); color: var(--nonaffecte); }
+
+  .sep-row td { height: 4px; background: var(--night); padding: 0; border: none; }
+
+  /* ── STAND VIEW ── */
+  .filter-bar {
+    display: flex; gap: 0.7rem; margin-bottom: 1.3rem;
+    flex-wrap: wrap; align-items: center;
+  }
+  select {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-family: 'Outfit', sans-serif; font-size: 0.85rem;
+    cursor: pointer;
+  }
+  select:focus { outline: none; border-color: var(--gold); }
+
+  .stand-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .stand-block-head {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.85rem 1.3rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .stand-block-head h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem; font-weight: 600; color: var(--text);
+  }
+  .stand-block-count {
+    margin-left: auto; font-size: 0.7rem;
+    color: var(--muted); font-family: 'DM Mono', monospace;
+    background: var(--night); padding: 0.2rem 0.6rem; border-radius: 10px;
+  }
+  .person-row {
+    display: flex; align-items: center; gap: 0.7rem;
+    padding: 0.6rem 1.3rem;
+    border-top: 1px solid var(--border);
+  }
+  .person-row:first-of-type { border-top: none; }
+  .person-name {
+    font-weight: 500; font-size: 0.85rem;
+    min-width: 160px; color: var(--text);
+  }
+  .mini-chips { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+  .mc {
+    font-size: 0.68rem; font-weight: 500;
+    padding: 0.18rem 0.55rem; border-radius: 10px;
+    white-space: nowrap; color: white;
+    font-family: 'DM Mono', monospace;
+  }
+  .mc-bonbons    { background: var(--bonbons); }
+  .mc-cocktails  { background: var(--cocktails); }
+  .mc-vip        { background: var(--vip); }
+  .mc-logistique { background: var(--logistique); }
+  .mc-nonaffecte { background: var(--nonaffecte); }
+  .no-one { padding: 0.8rem 1.3rem; color: var(--muted); font-size: 0.8rem; font-style: italic; }
+
+  /* ── PERSONNE VIEW ── */
+  input[type="text"] {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-family: 'Outfit', sans-serif; font-size: 0.85rem;
+    width: 100%; max-width: 280px;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--gold); }
+
+  .p-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.1rem 1.3rem;
+    margin-bottom: 0.75rem;
+  }
+  .p-card-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.8rem;
+  }
+  .p-card-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem; font-weight: 600; color: var(--text);
+  }
+  .p-card-ct {
+    font-size: 0.68rem; font-family: 'DM Mono', monospace;
+    color: var(--muted); background: var(--surface);
+    padding: 0.2rem 0.6rem; border-radius: 10px;
+  }
+  .p-day-row {
+    display: flex; gap: 0.5rem; align-items: flex-start;
+    margin-bottom: 0.4rem; flex-wrap: wrap;
+  }
+  .p-day-lbl {
+    font-size: 0.68rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); min-width: 45px; padding-top: 0.2rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── EMPTY ── */
+  .empty {
+    text-align: center; padding: 3rem 1rem; color: var(--muted);
+  }
+  .empty-icon { font-size: 2rem; margin-bottom: 0.6rem; }
+  .empty p { font-size: 0.85rem; }
+
+  /* ── INSTRUCTIONS ── */
+  .instructions {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.4rem 1.6rem;
+    margin-bottom: 1.4rem;
+  }
+  .instructions h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem; color: var(--gold);
+    margin-bottom: 0.8rem;
+  }
+  .instructions ol { padding-left: 1.2rem; }
+  .instructions li {
+    font-size: 0.83rem; color: var(--soft);
+    margin-bottom: 0.5rem; line-height: 1.6;
+  }
+  .instructions code {
+    font-family: 'DM Mono', monospace;
+    background: var(--surface); border-radius: 4px;
+    padding: 0.1rem 0.4rem; font-size: 0.78rem;
+    color: var(--gold); word-break: break-all;
+  }
+  .instructions .note {
+    font-size: 0.78rem; color: var(--muted);
+    margin-top: 0.8rem; padding-top: 0.8rem;
+    border-top: 1px solid var(--border); line-height: 1.6;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; color: black; }
+    header { background: #1A1916; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    nav, .hdr-right, .filter-bar, #tab-config { display: none !important; }
+    .tab { display: block !important; page-break-before: always; }
+    .tab:first-of-type { page-break-before: avoid; }
+    main { padding: 0; }
+    .tbl-wrap, .stand-block, .p-card { background: white; border-color: #DDD; }
+    thead tr { background: #EEE; }
+    thead th, td { color: black; }
+    .stat-card { background: #F5F5F5; }
+  }
+
+  @media (max-width: 640px) {
+    header, nav, main { padding-left: 1rem; padding-right: 1rem; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-left">
+    <h1>Suivi Dispo <em>RCHC</em></h1>
+    <div class="hdr-dates">Ven. 15 · Sam. 16 · Dim. 17 Mai 2025</div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-badge">Live</div>
+    <span class="last-update" id="last-update">—</span>
+    <button class="btn-refresh" id="btn-refresh" onclick="loadData()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+      Actualiser
+    </button>
+    <button class="btn-print" onclick="window.print()">🖨</button>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="goTab('global', this)">📊 Vue globale</button>
+  <button onclick="goTab('stand', this)">🎯 Par stand</button>
+  <button onclick="goTab('personne', this)">👤 Par personne</button>
+  <button onclick="goTab('config', this)">⚙️ Configuration</button>
+</nav>
+
+<main>
+
+  <!-- GLOBAL -->
+  <div id="tab-global" class="tab active">
+    <div id="global-content">
+      <div class="loader"><div class="spinner"></div> Chargement des données…</div>
+    </div>
+  </div>
+
+  <!-- STAND -->
+  <div id="tab-stand" class="tab">
+    <p class="sec-title">Vue par stand</p>
+    <p class="sec-sub">Qui est présent, à quel moment, sur chaque stand.</p>
+    <div class="filter-bar">
+      <select id="sel-stand" onchange="renderStand()">
+        <option value="Bar à bonbons">🍬 Bar à bonbons</option>
+        <option value="Bar à cocktails">🍹 Bar à cocktails</option>
+        <option value="Salon VIP">⭐ Salon VIP</option>
+        <option value="Logistique">📦 Logistique</option>
+        <option value="Non affecté">— Non affecté</option>
+      </select>
+    </div>
+    <div id="stand-content"><div class="loader"><div class="spinner"></div> Chargement…</div></div>
+  </div>
+
+  <!-- PERSONNE -->
+  <div id="tab-personne" class="tab">
+    <p class="sec-title">Vue par personne</p>
+    <p class="sec-sub">Planning individuel de chaque participant.</p>
+    <div class="filter-bar">
+      <input type="text" id="search-p" placeholder="🔍 Rechercher un nom…" oninput="renderPersonne()">
+    </div>
+    <div id="personne-content"><div class="loader"><div class="spinner"></div> Chargement…</div></div>
+  </div>
+
+  <!-- CONFIG -->
+  <div id="tab-config" class="tab">
+    <p class="sec-title">Configuration</p>
+    <p class="sec-sub">Connecte le cockpit à ton Google Sheets.</p>
+    <div class="instructions">
+      <h3>Comment connecter ton Google Sheets</h3>
+      <ol>
+        <li>Dans ton Google Sheets, clique sur <strong>Fichier → Partager → Publier sur le web</strong></li>
+        <li>Sélectionne <strong>l'onglet des réponses</strong> (ex. "Réponses au formulaire 1") et le format <strong>CSV</strong></li>
+        <li>Clique sur <strong>Publier</strong> et copie le lien généré</li>
+        <li>Colle ce lien ci-dessous et clique sur <strong>Enregistrer et charger</strong></li>
+      </ol>
+      <div class="note">
+        ⚠️ Ce lien est différent du lien de partage normal. Il se termine par <code>/pub?output=csv</code> et ne nécessite pas d'authentification.
+      </div>
+    </div>
+
+    <div style="display:flex; gap:0.7rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:1.2rem;">
+      <div style="flex:1; min-width:280px;">
+        <label style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.4rem;">Lien CSV publié</label>
+        <input type="text" id="csv-url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv" style="max-width:100%;">
+      </div>
+      <button class="btn-refresh" onclick="saveAndLoad()" style="height:38px;padding:0 1.2rem;font-size:0.85rem;">Enregistrer et charger</button>
+    </div>
+
+    <div style="margin-top:1.5rem;">
+      <p class="sec-title" style="font-size:1rem;">Correspondance des stands</p>
+      <p class="sec-sub">Vérifie que les noms correspondent exactement à ce que tu as saisi dans Google Forms.</p>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <table>
+          <thead><tr><th>Stand dans ce cockpit</th><th>Valeur exacte dans le formulaire</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mc mc-bonbons">●</span> Bar à bonbons</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Bar à bonbons</td></tr>
+            <tr><td><span class="mc mc-cocktails">●</span> Bar à cocktails</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Bar à cocktails</td></tr>
+            <tr><td><span class="mc mc-vip">●</span> Salon VIP</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Salon VIP</td></tr>
+            <tr><td><span class="mc mc-logistique">●</span> Logistique</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Logistique</td></tr>
+            <tr><td><span class="mc mc-nonaffecte">●</span> Non affecté</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Non affecté</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════
+// STRUCTURE DES DONNÉES
+// ═══════════════════════════════════════
+
+// Colonnes du Sheets (B=index 1 à AF=index 30, A=Horodateur=0)
+// Col 1-8   : Vendredi 15/05 [16h-17h] ... [23h-00h]
+// Col 9-20  : Samedi 16/05 [12h-13h] ... [23h-00h]
+// Col 21-30 : Dimanche 17/05 [10h-11h] ... [19h-20h]
+// Col 31    : Prénom Nom (index 30 en 0-based depuis col B = index 1 dans tableau)
+
+const STRUCTURE = {
+  ven: {
+    label: 'Vendredi 15 mai',
+    short: 'Ven.',
+    slots: [
+      { col: 1,  label: '16h–17h', h: 16 },
+      { col: 2,  label: '17h–18h', h: 17 },
+      { col: 3,  label: '18h–19h', h: 18 },
+      { col: 4,  label: '19h–20h', h: 19 },
+      { col: 5,  label: '20h–21h', h: 20 },
+      { col: 6,  label: '21h–22h', h: 21 },
+      { col: 7,  label: '22h–23h', h: 22 },
+      { col: 8,  label: '23h–00h', h: 23 },
+    ]
+  },
+  sam: {
+    label: 'Samedi 16 mai',
+    short: 'Sam.',
+    slots: [
+      { col: 9,  label: '12h–13h', h: 12 },
+      { col: 10, label: '13h–14h', h: 13 },
+      { col: 11, label: '14h–15h', h: 14 },
+      { col: 12, label: '15h–16h', h: 15 },
+      { col: 13, label: '16h–17h', h: 16 },
+      { col: 14, label: '17h–18h', h: 17 },
+      { col: 15, label: '18h–19h', h: 18 },
+      { col: 16, label: '19h–20h', h: 19 },
+      { col: 17, label: '20h–21h', h: 20 },
+      { col: 18, label: '21h–22h', h: 21 },
+      { col: 19, label: '22h–23h', h: 22 },
+      { col: 20, label: '23h–00h', h: 23 },
+    ]
+  },
+  dim: {
+    label: 'Dimanche 17 mai',
+    short: 'Dim.',
+    slots: [
+      { col: 21, label: '10h–11h', h: 10 },
+      { col: 22, label: '11h–12h', h: 11 },
+      { col: 23, label: '12h–13h', h: 12 },
+      { col: 24, label: '13h–14h', h: 13 },
+      { col: 25, label: '14h–15h', h: 14 },
+      { col: 26, label: '15h–16h', h: 15 },
+      { col: 27, label: '16h–17h', h: 16 },
+      { col: 28, label: '17h–18h', h: 17 },
+      { col: 29, label: '18h–19h', h: 18 },
+      { col: 30, label: '19h–20h', h: 19 },
+    ]
+  }
+};
+
+const NOM_COL = 31; // index dans la ligne CSV (0-based), colonne AF = index 31
+
+const STANDS_CONFIG = {
+  'Bar à bonbons':    { key: 'bonbons',    emoji: '🍬', css: 'bbon', mc: 'mc-bonbons' },
+  'Bar à cocktails':  { key: 'cocktails',  emoji: '🍹', css: 'bcoc', mc: 'mc-cocktails' },
+  'Salon VIP':        { key: 'vip',        emoji: '⭐', css: 'bvip', mc: 'mc-vip' },
+  'Logistique':       { key: 'logistique', emoji: '📦', css: 'blog', mc: 'mc-logistique' },
+  'Non affecté':      { key: 'nonaffecte', emoji: '—',  css: 'bna',  mc: 'mc-nonaffecte' }
+};
+
+const STAND_NAMES = Object.keys(STANDS_CONFIG);
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let csvUrl = localStorage.getItem('cockpit_csv_url') || '';
+let rows = []; // tableau de données parsées : [{nom, slots:{jourKey_h: standLabel}}]
+
+// ═══════════════════════════════════════
+// CHARGEMENT CSV
+// ═══════════════════════════════════════
+async function loadData() {
+  const btn = document.getElementById('btn-refresh');
+  btn.classList.add('spinning');
+
+  if (!csvUrl) {
+    showNoConfig();
+    btn.classList.remove('spinning');
+    return;
+  }
+
+  try {
+    // Ajout d'un timestamp pour éviter le cache
+    const url = csvUrl + (csvUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    rows = parseCSV(text);
+    document.getElementById('last-update').textContent = 'Màj ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+    renderAll();
+  } catch (err) {
+    showError(`Impossible de charger les données : ${err.message}<br>Vérifie que le lien CSV est correct et que le fichier est bien publié sur le web.`);
+  }
+
+  btn.classList.remove('spinning');
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  const result = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (!cols || cols.length < 2) continue;
+
+    const nom = (cols[NOM_COL] || '').trim();
+    if (!nom) continue;
+
+    const entry = { nom, slots: {} };
+
+    Object.entries(STRUCTURE).forEach(([jourKey, jour]) => {
+      jour.slots.forEach(slot => {
+        const val = (cols[slot.col] || '').trim();
+        if (val) {
+          entry.slots[`${jourKey}_${slot.h}`] = val;
+        }
+      });
+    });
+
+    // Gérer les doublons : garder la dernière saisie (dernière ligne)
+    const existing = result.findIndex(r => r.nom.toUpperCase() === nom.toUpperCase());
+    if (existing >= 0) result[existing] = entry;
+    else result.push(entry);
+  }
+
+  return result;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function fmtNom(str) {
+  return str.split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : '').join(' ');
+}
+
+function standCss(standLabel) {
+  return STANDS_CONFIG[standLabel]?.mc || 'mc-nonaffecte';
+}
+
+// ═══════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════
+function renderAll() {
+  renderGlobal();
+  renderStand();
+  renderPersonne();
+}
+
+// ═══════════════════════════════════════
+// VUE GLOBALE
+// ═══════════════════════════════════════
+function renderGlobal() {
+  const container = document.getElementById('global-content');
+
+  const totalP = rows.length;
+  const totalC = rows.reduce((s, r) => s + Object.keys(r.slots).length, 0);
+
+  // Compter par stand global
+  const standTotals = {};
+  STAND_NAMES.forEach(s => standTotals[s] = 0);
+  rows.forEach(r => Object.values(r.slots).forEach(v => { if (standTotals[v] !== undefined) standTotals[v]++; }));
+
+  let html = `
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-n">${totalP}</div><div class="stat-l">Participants</div></div>
+      <div class="stat-card"><div class="stat-n">${totalC}</div><div class="stat-l">Créneaux déclarés</div></div>
+      ${STAND_NAMES.map(s => {
+        const cfg = STANDS_CONFIG[s];
+        return `<div class="stat-card"><div class="stat-n" style="font-size:1.4rem">${standTotals[s]||0}</div><div class="stat-l">${cfg.emoji} ${s}</div></div>`;
+      }).join('')}
+    </div>
+    <p class="sec-title">Grille horaire</p>
+    <p class="sec-sub">Nombre de personnes présentes par stand et par créneau.</p>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--bonbons)"></div>Bar à bonbons</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--cocktails)"></div>Bar à cocktails</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--vip)"></div>Salon VIP</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--logistique)"></div>Logistique</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--nonaffecte)"></div>Non affecté</div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Jour</th><th>Créneau</th>
+          <th>🍬 Bonbons</th><th>🍹 Cocktails</th><th>⭐ VIP</th><th>📦 Logistique</th><th>— N/A</th><th>Total</th>
+        </tr></thead>
+        <tbody>
+  `;
+
+  const jourKeys = Object.keys(STRUCTURE);
+  jourKeys.forEach((jourKey, ji) => {
+    const jour = STRUCTURE[jourKey];
+    jour.slots.forEach((slot, si) => {
+      const counts = {};
+      STAND_NAMES.forEach(s => counts[s] = 0);
+      rows.forEach(r => {
+        const v = r.slots[`${jourKey}_${slot.h}`];
+        if (v && counts[v] !== undefined) counts[v]++;
+      });
+      const total = Object.values(counts).reduce((a,b)=>a+b,0);
+      const cfg = c => STANDS_CONFIG[c];
+
+      html += `<tr>
+        <td class="jour-cell">${si===0 ? jour.label : ''}</td>
+        <td class="time-cell">${slot.label}</td>
+        ${STAND_NAMES.map(s => {
+          const n = counts[s];
+          const cl = n===0 ? 'b0' : STANDS_CONFIG[s].css;
+          return `<td><span class="badge ${cl}">${n||'·'}</span></td>`;
+        }).join('')}
+        <td class="total-cell">${total||'—'}</td>
+      </tr>`;
+    });
+
+    if (ji < jourKeys.length - 1) {
+      html += `<tr class="sep-row"><td colspan="8"></td></tr>`;
+    }
+  });
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════
+// VUE PAR STAND
+// ═══════════════════════════════════════
+function renderStand() {
+  const standLabel = document.getElementById('sel-stand')?.value || 'Bar à bonbons';
+  const cfg = STANDS_CONFIG[standLabel];
+  const container = document.getElementById('stand-content');
+  if (!container) return;
+
+  let html = '';
+
+  Object.entries(STRUCTURE).forEach(([jourKey, jour]) => {
+    const personnes = [];
+    rows.forEach(r => {
+      const crs = jour.slots.filter(s => r.slots[`${jourKey}_${s.h}`] === standLabel);
+      if (crs.length) personnes.push({ nom: r.nom, crs });
+    });
+
+    html += `
+      <div class="stand-block">
+        <div class="stand-block-head">
+          <span>${cfg.emoji}</span>
+          <h3>${standLabel} — ${jour.label}</h3>
+          <span class="stand-block-count">${personnes.length} personne${personnes.length!==1?'s':''}</span>
+        </div>
+    `;
+
+    if (!personnes.length) {
+      html += `<div class="no-one">Aucun participant déclaré sur ce stand ce jour.</div>`;
+    } else {
+      personnes.forEach(p => {
+        html += `
+          <div class="person-row">
+            <div class="person-name">${fmtNom(p.nom)}</div>
+            <div class="mini-chips">
+              ${p.crs.map(s => `<span class="mc ${cfg.mc}">${s.label}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      });
+    }
+    html += `</div>`;
+  });
+
+  container.innerHTML = html || '<div class="empty"><div class="empty-icon">🎯</div><p>Aucune donnée.</p></div>';
+}
+
+// ═══════════════════════════════════════
+// VUE PAR PERSONNE
+// ═══════════════════════════════════════
+function renderPersonne() {
+  const search = (document.getElementById('search-p')?.value || '').trim().toUpperCase();
+  const container = document.getElementById('personne-content');
+  if (!container) return;
+
+  let data = [...rows];
+  if (search) data = data.filter(r => r.nom.toUpperCase().includes(search));
+  data.sort((a,b) => a.nom.localeCompare(b.nom));
+
+  if (!data.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><p>${search?'Aucun participant trouvé.':'Aucune disponibilité saisie pour le moment.'}</p></div>`;
+    return;
+  }
+
+  let html = '';
+  data.forEach(r => {
+    const total = Object.keys(r.slots).length;
+    let daysHtml = '';
+
+    Object.entries(STRUCTURE).forEach(([jourKey, jour]) => {
+      const crs = jour.slots.filter(s => r.slots[`${jourKey}_${s.h}`]);
+      if (!crs.length) return;
+      daysHtml += `
+        <div class="p-day-row">
+          <div class="p-day-lbl">${jour.short}</div>
+          <div class="mini-chips">
+            ${crs.map(s => {
+              const v = r.slots[`${jourKey}_${s.h}`];
+              return `<span class="mc ${standCss(v)}">${s.label}</span>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+      <div class="p-card">
+        <div class="p-card-top">
+          <div class="p-card-name">${fmtNom(r.nom)}</div>
+          <div class="p-card-ct">${total} créneau${total!==1?'x':''}</div>
+        </div>
+        ${daysHtml || '<div style="color:var(--muted);font-size:0.8rem">Aucun créneau déclaré.</div>'}
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+function saveAndLoad() {
+  const val = document.getElementById('csv-url').value.trim();
+  if (!val) return;
+  csvUrl = val;
+  localStorage.setItem('cockpit_csv_url', val);
+  loadData();
+  goTab('global', document.querySelector('nav button'));
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function showNoConfig() {
+  document.getElementById('global-content').innerHTML = `
+    <div class="error-box">
+      ⚙️ Aucun lien CSV configuré. Va dans l'onglet <strong>Configuration</strong> pour connecter ton Google Sheets.
+    </div>
+  `;
+}
+
+function showError(msg) {
+  document.getElementById('global-content').innerHTML = `<div class="error-box">❌ ${msg}</div>`;
+}
+
+function goTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${id}`).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+if (csvUrl) {
+  document.getElementById('csv-url') && (document.getElementById('csv-url').value = csvUrl);
+  loadData();
+} else {
+  showNoConfig();
+}
+
+// Auto-refresh toutes les 2 minutes si URL configurée
+setInterval(() => { if (csvUrl) loadData(); }, 120000);
+</script>
+</body>
+</html>
