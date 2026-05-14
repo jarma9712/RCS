@@ -470,11 +470,11 @@
     <p class="sec-sub">Qui est présent, à quel moment, sur chaque stand.</p>
     <div class="filter-bar">
       <select id="sel-stand" onchange="renderStand()">
-        <option value="Bar à bonbons">🍬 Bar à bonbons</option>
-        <option value="Bar à cocktails">🍹 Bar à cocktails</option>
+        <option value="Bar a bonbons">🍬 Bar à bonbons</option>
+        <option value="Bar a cocktails">🍹 Bar à cocktails</option>
         <option value="Salon VIP">⭐ Salon VIP</option>
         <option value="Logistique">📦 Logistique</option>
-        <option value="Non affecté">— Non affecté</option>
+        <option value="Autre">— Autre</option>
       </select>
     </div>
     <div id="stand-content"><div class="loader"><div class="spinner"></div> Chargement…</div></div>
@@ -522,11 +522,11 @@
         <table>
           <thead><tr><th>Stand dans ce cockpit</th><th>Valeur exacte dans le formulaire</th></tr></thead>
           <tbody>
-            <tr><td><span class="mc mc-bonbons">●</span> Bar à bonbons</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Bar à bonbons</td></tr>
-            <tr><td><span class="mc mc-cocktails">●</span> Bar à cocktails</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Bar à cocktails</td></tr>
+            <tr><td><span class="mc mc-bonbons">●</span> Bar à bonbons</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Bar a bonbons</td></tr>
+            <tr><td><span class="mc mc-cocktails">●</span> Bar à cocktails</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Bar a cocktails</td></tr>
             <tr><td><span class="mc mc-vip">●</span> Salon VIP</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Salon VIP</td></tr>
             <tr><td><span class="mc mc-logistique">●</span> Logistique</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Logistique</td></tr>
-            <tr><td><span class="mc mc-nonaffecte">●</span> Non affecté</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Non affecté</td></tr>
+            <tr><td><span class="mc mc-nonaffecte">●</span> Autre</td><td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--soft);">Autre</td></tr>
           </tbody>
         </table>
       </div>
@@ -600,11 +600,11 @@ const STRUCTURE = {
 const NOM_COL = 31; // index dans la ligne CSV (0-based), colonne AF = index 31
 
 const STANDS_CONFIG = {
-  'Bar à bonbons':    { key: 'bonbons',    emoji: '🍬', css: 'bbon', mc: 'mc-bonbons' },
-  'Bar à cocktails':  { key: 'cocktails',  emoji: '🍹', css: 'bcoc', mc: 'mc-cocktails' },
+  'Bar a bonbons':    { key: 'bonbons',    emoji: '🍬', css: 'bbon', mc: 'mc-bonbons' },
+  'Bar a cocktails':  { key: 'cocktails',  emoji: '🍹', css: 'bcoc', mc: 'mc-cocktails' },
   'Salon VIP':        { key: 'vip',        emoji: '⭐', css: 'bvip', mc: 'mc-vip' },
   'Logistique':       { key: 'logistique', emoji: '📦', css: 'blog', mc: 'mc-logistique' },
-  'Non affecté':      { key: 'nonaffecte', emoji: '—',  css: 'bna',  mc: 'mc-nonaffecte' }
+  'Autre':            { key: 'nonaffecte', emoji: '—',  css: 'bna',  mc: 'mc-nonaffecte' }
 };
 
 const STAND_NAMES = Object.keys(STANDS_CONFIG);
