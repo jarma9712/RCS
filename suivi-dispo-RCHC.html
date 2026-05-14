@@ -612,7 +612,8 @@ const STAND_NAMES = Object.keys(STANDS_CONFIG);
 // ═══════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════
-let csvUrl = localStorage.getItem('cockpit_csv_url') || '';
+const DEFAULT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR-rtutqRrh3buEp52a4tbZ3-1JVSp0pjL_5T4vTxSIOdaMi2EG03ZY34i6F7fPkAOEGkJVtQooXiXg/pub?gid=1524965443&single=true&output=csv';
+let csvUrl = localStorage.getItem('cockpit_csv_url') || DEFAULT_CSV_URL;
 let rows = []; // tableau de données parsées : [{nom, slots:{jourKey_h: standLabel}}]
 
 // ═══════════════════════════════════════
